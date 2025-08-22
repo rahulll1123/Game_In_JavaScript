@@ -1,0 +1,14 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+#canvas1{
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    background-color: red;
+    border: 3px solid black ;
+    margin: 0;
+    padding: 0;
+}
