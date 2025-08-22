@@ -1,108 +1,71 @@
-const canvas = document.getElementById("canvas1");
+const canvas = document.getElementById('canvas1');
 const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-window.addEventListener("resize", (e) => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-})
-let clickX = 0;
-let clickY = 0;
-const loadaudio = new Audio();
-loadaudio.src = "burst.mp3";
+console.log(ctx);
+const CANVAS_WIDTH = canvas.width = 800;
+const CANVAS_HEIGHT = canvas.height = 700;
+let gameSpeed = 10;
 
-const image = new Image();
-image.src = "boom.png";
+const images = [
+    { img: new Image(), src: "layer-1.png" },
+    { img: new Image(), src: "layer-2.png" },
+    { img: new Image(), src: "layer-3.png" },
+    { img: new Image(), src: "layer-4.png" },
+    { img: new Image(), src: "layer-5.png" }
+];
 
-const enemyimage = new Image();
-enemyimage.src = "raven.png";
+let loadedImages = 0;
 
-let EnemyPerWave = 3;
+images.forEach((layer, idx) => {
+    layer.img.src = layer.src;
+    layer.img.onload = () => {
+        loadedImages++;
+        if (loadedImages === images.length) {
+            startGame();
+        }
+    };
+});
 
-class Boom {
-    constructor(posX, posY) {
-        this.height = 179;
-        this.width = 200;
-        this.x = posX - this.width / 2;
-        this.y = posY - this.height / 2;
-        this.currframe = 0;
-        this.frames = 5;
-        this.frame = 0;
-        this.audio = new Audio();
-        this.audio.src = "burst.mp3";
+class Layer {
+    constructor(image, speedModifier) {
+        this.x = 0;
+        this.y = 0;
+        this.width = 2400;
+        this.height = 700;
+        this.image = image;
+        this.speedModifier = speedModifier;
+        this.speed = gameSpeed * this.speedModifier;
     }
+
     update() {
-        this.frame += .2;
-        this.currframe = Math.floor(this.frame);
+        this.speed = gameSpeed * this.speedModifier;
+        if (this.x <= -this.width) {
+            this.x =0;
+        }
+        this.x-=Math.floor(this.speed); 
+
     }
     draw() {
-        ctx.drawImage(image, this.currframe * this.width, 0, this.width, this.height, this.x, this.y, this.width, this.height);
+        ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+        ctx.drawImage(this.image, this.x + this.width, this.y, this.width, this.height);
     }
 }
+function startGame() {
+    const Layer1 = new Layer(images[0].img, 0.2);
+    const Layer2 = new Layer(images[1].img, 0.3);
+    const Layer3 = new Layer(images[2].img, 0.4);
+    const Layer4 = new Layer(images[3].img, 0.6);
+    const Layer5 = new Layer(images[4].img, 1);
 
-class Enemy {
-    constructor() {
-        this.width = 271;
-        this.height = 194;
-        this.x = canvas.width;
-        this.y = Math.random() * (canvas.height - this.height)
-        this.initialY = this.y;
-        this.currframe = 0;
-        this.frames = 6;
-        this.frame = 0;
-        this.swingAmplitude = Math.random() * 50 + 10;
-        this.speed = Math.random() * 10 + 3;
+    const background = [Layer1, Layer2, Layer3, Layer4, Layer5];
+
+    function animate() {
+        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        background.forEach(element => {
+            element.update();
+            element.draw();
+        });
+
+        requestAnimationFrame(animate);
     }
-    update() {
-        this.x -= this.speed;
-        this.y = this.initialY + Math.sin(this.frame) * this.swingAmplitude;
-        this.frame += .2;
-        this.currframe = Math.floor(this.frame % this.frames);
-    }
-    draw() {
-        ctx.drawImage(enemyimage, this.currframe * this.width, 0, this.width, this.height, this.x, this.y, this.width, this.height);
-    }
+    animate();
 }
-
-let enemyArray = [];
-setInterval(() => {
-    let enemydrop = Math.random() * EnemyPerWave;
-    for (let i = 0; i < enemydrop; i++) {
-        enemyArray.push(new Enemy());
-    }
-}, 1000);
-
-let boomArray = [];
-window.addEventListener("click", (e) => {
-    boomArray.push(new Boom(e.x, e.y));
-    // console.log(e,clickX,clickY);
-})
-let oldtimestamp=0;
-
-function animate(timestamp) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let i = 0; i < enemyArray.length; i++) {
-        enemyArray[i].update();
-        enemyArray[i].draw();
-    }
-
-
-    for (let i = 0; i < boomArray.length; i++) {
-        if (boomArray[i].frame == 0) {
-
-            boomArray[i].audio.play();
-        }
-        if (boomArray[i].frame > boomArray[i].frames) {
-            boomArray.splice(i, 1);
-        } else {
-            boomArray[i].update();
-            boomArray[i].draw();
-        }
-    }
-    let deltatime=timestamp-oldtimestamp;
-    oldtimestamp=timestamp;
-    console.log(deltatime);
-    requestAnimationFrame(animate);
-}
-animate(0);
-
